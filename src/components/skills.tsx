@@ -1,7 +1,7 @@
 const skillGroups = [
   {
     title: "Frontend",
-    items: ["TypeScript", "Next.js", "React", "UI Systems", "Performance"],
+    items: ["TypeScript", "Next.js", "React"],
   },
   {
     title: "Backend",
@@ -9,7 +9,7 @@ const skillGroups = [
   },
   {
     title: "Cloud & DevOps",
-    items: ["Docker", "AWS EC2", "AWS RDS", "CloudFormation", "CI/CD"],
+    items: ["Docker", "AWS EC2", "AWS RDS", "CloudFormation"],
   },
   {
     title: "Languages",

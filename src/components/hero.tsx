@@ -46,13 +46,15 @@ export default function Hero() {
         </div>
       </div>
       <div className="grid gap-4">
-        <div className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 shadow-[var(--shadow)]">
+        <div className="flex flex-col justify-center rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] px-6 py-2 shadow-[var(--shadow)]">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
             Current Focus
           </p>
           <p className="mt-4 text-2xl font-semibold text-[color:var(--text)]">
-            Advanced backend engineering, containerization, and cloud
-            infrastructure.
+            Problem Solving,<br />
+            Design Patterns & Refactoring,<br />
+            Performance Optimization,<br />
+            System Design & Architecture.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">

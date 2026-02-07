@@ -5,13 +5,29 @@ export default function About() {
         <h2 className="text-2xl font-semibold text-[color:var(--text)]">
           About
         </h2>
-        <p className="mt-4 text-base leading-7 text-[color:var(--muted)]">
-          I'm a full-stack developer specializing in TypeScript across the
-          stack. I build API-first products with NestJS, design reliable data
-          layers with Prisma, and ship production-ready apps with Next.js.
-          I work across MongoDB, PostgreSQL, and MySQL depending on the
-          product's needs.
+        <p className="mt-3 text-sm leading-5 text-[color:var(--muted)] text-justify">
+          Hello! I&apos;m Miraj, a dedicated{" "}
+          <span className="font-semibold text-[color:var(--text)]">Web Developer</span>{" "}
+          with a strong passion for crafting exceptional digital experiences.
+          With{" "}
+          <span className="text-sm font-semibold text-[color:var(--accent)]">2.5+</span>{" "}
+          years of experience in application development, I thrive on turning
+          ideas into reality through clean code and innovative design. My
+          journey in web development began with a fascination for the
+          intersection of technology and creativity, and since then, I&apos;ve
+          been on a mission to create user-centric solutions that leave a
+          lasting impact. When I&apos;m not coding, you can find me exploring
+          the latest trends in software development, experimenting with new
+          technologies, or simply enjoying a good cup of coffee.
         </p>
+        <div className="mt-6">
+          <a
+            href="#contact"
+            className="rounded-full bg-[color:var(--accent)] px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-black transition hover:-translate-y-0.5 hover:bg-[color:var(--accent-strong)]"
+          >
+            Let&apos;s Connect
+          </a>
+        </div>
       </div>
       <div className="grid gap-4">
         {[

@@ -27,6 +27,20 @@ export default function RootLayout({
       <body
         className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var stored = localStorage.getItem("theme");
+                  var preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                  var next = stored === "light" || stored === "dark" ? stored : preferred;
+                  document.documentElement.classList.toggle("dark", next === "dark");
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         {children}
       </body>
     </html>

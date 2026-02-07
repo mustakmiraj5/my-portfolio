@@ -1,21 +1,15 @@
 const projects = [
   {
-    title: "Multi-tenant SaaS Platform",
+    title: "Golfee",
     description:
-      "Built a scalable SaaS backend with secure auth, role-based access, and tenant isolation.",
-    tags: ["Next.js", "NestJS", "PostgreSQL"],
+      "Campaign and free-ticket management system for golf courses, integrated with the main golf course reservation system.",
+    tags: ["Next.js", "NestJS", "MySQL", "AWS"],
   },
   {
-    title: "Realtime Ops Dashboard",
+    title: "GreenTee",
     description:
-      "Shipped a real-time monitoring console with streaming metrics and incident workflows.",
-    tags: ["TypeScript", "MongoDB", "Docker"],
-  },
-  {
-    title: "Cloud Automation Suite",
-    description:
-      "Infrastructure and deployment automation with repeatable, auditable environments.",
-    tags: ["AWS EC2/RDS", "CloudFormation", "Prisma"],
+      "Multi-tenant SaaS for golf course maintenance — manages keepers, workers, work logs, audit trails, inventory, machinery, incidents, and insecticides across golf groups.",
+    tags: ["Next.js", "NestJS", "MySQL", "AWS"],
   },
 ];
 
@@ -38,7 +32,7 @@ export default function Projects() {
           Request case studies
         </a>
       </div>
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         {projects.map((project) => (
           <article
             key={project.title}

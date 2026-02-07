@@ -9,7 +9,7 @@ export type SocialLink = {
 export const socialLinks: SocialLink[] = [
   {
     label: "X",
-    href: "#",
+    href: "https://x.com/MustakSahariar",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
         <path
@@ -21,7 +21,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     label: "LinkedIn",
-    href: "#",
+    href: "https://www.linkedin.com/in/mustakmiraj005/",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
         <path
@@ -33,7 +33,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     label: "LeetCode",
-    href: "#",
+    href: "https://leetcode.com/u/mustakmiraj5/",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
         <path
@@ -45,7 +45,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     label: "GitHub",
-    href: "#",
+    href: "https://github.com/mustakmiraj5",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
         <path
