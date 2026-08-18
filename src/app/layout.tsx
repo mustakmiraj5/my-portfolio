@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { SITE } from "@/lib/site";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -12,10 +13,46 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const title = `${SITE.name} | ${SITE.role}`;
+const alt = `${SITE.name} — ${SITE.role}`;
+const description = `${SITE.name} — ${SITE.description} Explore my experience, projects, and skills.`;
+
 export const metadata: Metadata = {
-  title: "Mustak Sahariar Miraj | Portfolio",
-  description:
-    "Mustak Sahariar Miraj — Software Engineer in Dhaka, Bangladesh, building and operating AWS-hosted SaaS with TypeScript, NestJS, MySQL and React. Explore my experience, projects, and skills.",
+  metadataBase: new URL(SITE.url),
+  title,
+  description,
+  authors: [{ name: SITE.name, url: SITE.url }],
+  creator: SITE.name,
+  keywords: [
+    "Mustak Sahariar Miraj",
+    "Software Engineer",
+    "Backend Developer",
+    "NestJS",
+    "TypeScript",
+    "Next.js",
+    "AWS",
+    "Dhaka",
+    "Bangladesh",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: SITE.url,
+    siteName: SITE.name,
+    title,
+    description,
+    locale: "en_US",
+    // Pinned explicitly: the file-convention URL is inferred from the
+    // serving origin, which resolves to localhost outside Vercel.
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    creator: "@MustakSahariar",
+    images: [{ url: "/opengraph-image", alt }],
+  },
 };
 
 export default function RootLayout({
