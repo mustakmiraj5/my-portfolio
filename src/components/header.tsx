@@ -7,6 +7,7 @@ const navItems = [
   { id: "about", label: "About" },
   { id: "experience", label: "Experience" },
   { id: "projects", label: "Projects" },
+  { id: "lab", label: "Lab" },
   { id: "skills", label: "Skills" },
   { id: "blogs", label: "Blogs" },
 ];
@@ -83,7 +84,7 @@ export default function Header() {
             </a>
           </div>
         </div>
-        <nav className="hidden items-center gap-6 text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)] md:flex">
+        <nav className="hidden items-center gap-6 text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)] lg:flex">
           {navItems.map((item) => (
             <a
               key={item.id}

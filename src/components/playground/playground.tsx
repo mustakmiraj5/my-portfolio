@@ -1,0 +1,188 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useCallback, useState } from "react";
+import { useDatabase } from "@/lib/playground/use-database";
+import type { QueryResult } from "@/lib/playground/use-database";
+import type { AnalyzedPlan } from "@/lib/playground/plan";
+import { isExplainable } from "@/lib/playground/plan";
+import { SNIPPETS } from "@/lib/playground/seed";
+import SchemaSidebar from "./schema-sidebar";
+import ResultsTable from "./results-table";
+import PlanView from "./plan-view";
+
+// CodeMirror touches `document` on load, so keep it out of the server render.
+const SqlEditor = dynamic(() => import("./sql-editor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[220px] animate-pulse rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)]" />
+  ),
+});
+
+const STORAGE_KEY = "playground:sql";
+
+export default function Playground() {
+  const { status, error: dbError, schema, run, explain, reset } = useDatabase();
+
+  // Lazy init rather than an effect: `sql` never reaches the server-rendered
+  // markup (the editor is ssr:false), so reading storage here can't desync
+  // hydration, and it avoids a cascading render on mount.
+  const [sql, setSql] = useState(() => {
+    if (typeof window === "undefined") return SNIPPETS[0].sql;
+    return localStorage.getItem(STORAGE_KEY) ?? SNIPPETS[0].sql;
+  });
+  const [result, setResult] = useState<QueryResult | null>(null);
+  const [plan, setPlan] = useState<AnalyzedPlan | null>(null);
+  const [queryError, setQueryError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"results" | "plan">("results");
+  const [running, setRunning] = useState(false);
+
+  const updateSql = useCallback((next: string) => {
+    setSql(next);
+    localStorage.setItem(STORAGE_KEY, next);
+  }, []);
+
+  const execute = useCallback(async () => {
+    if (status !== "ready" || running) return;
+    setRunning(true);
+    setQueryError(null);
+
+    const { result: next, error } = await run(sql);
+    if (error) {
+      setQueryError(error);
+      setResult(null);
+      setPlan(null);
+      setTab("results");
+      setRunning(false);
+      return;
+    }
+
+    setResult(next ?? null);
+    setTab("results");
+
+    // Read-only statements get a plan for free; writes would run twice.
+    if (isExplainable(sql)) {
+      const { plan: analyzed } = await explain(sql);
+      setPlan(analyzed ?? null);
+    } else {
+      setPlan(null);
+    }
+
+    setRunning(false);
+  }, [status, running, run, sql, explain]);
+
+  const busy = status === "booting" || status === "seeding";
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(240px,280px)_1fr]">
+      <div className="flex flex-col gap-4">
+        {busy ? (
+          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-4 text-sm text-[color:var(--muted)]">
+            {status === "booting" ? "Starting Postgres…" : "Seeding 120,000 rows…"}
+          </div>
+        ) : (
+          <SchemaSidebar
+            schema={schema}
+            onInsert={(text) => updateSql(`${sql}${sql.endsWith(" ") ? "" : " "}${text}`)}
+          />
+        )}
+
+        <button
+          type="button"
+          onClick={reset}
+          disabled={busy}
+          className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)] transition duration-300 hover:-translate-y-0.5 hover:border-[color:var(--accent)] hover:text-[color:var(--text)] disabled:opacity-50"
+        >
+          Reset database
+        </button>
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex flex-wrap gap-2">
+          {SNIPPETS.map((snippet) => (
+            <button
+              key={snippet.label}
+              type="button"
+              title={snippet.hint}
+              onClick={() => updateSql(snippet.sql)}
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--bg-elevated)] px-3 py-1.5 text-xs font-semibold text-[color:var(--muted)] transition duration-300 hover:-translate-y-0.5 hover:border-[color:var(--accent)] hover:text-[color:var(--text)]"
+            >
+              {snippet.label}
+            </button>
+          ))}
+        </div>
+
+        <SqlEditor value={sql} onChange={updateSql} onRun={execute} schema={schema} />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={execute}
+            disabled={busy || running}
+            className="rounded-full bg-[color:var(--btn-bg)] px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--on-accent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--btn-bg-hover)] disabled:opacity-50"
+          >
+            {running ? "Running…" : "Run query"}
+          </button>
+          <span className="text-xs text-[color:var(--muted)]">
+            <kbd className="font-mono">⌘</kbd>/<kbd className="font-mono">Ctrl</kbd> +{" "}
+            <kbd className="font-mono">Enter</kbd>
+          </span>
+          {result ? (
+            <span className="ml-auto font-mono text-xs text-[color:var(--muted)]">
+              {result.rowCount.toLocaleString()} rows · {result.elapsedMs.toFixed(1)} ms
+            </span>
+          ) : null}
+        </div>
+
+        {dbError ? (
+          <p className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 font-mono text-sm text-red-600 dark:text-red-300">
+            {dbError}
+          </p>
+        ) : null}
+
+        <div className="flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)]">
+          <div className="flex shrink-0 gap-1 border-b border-[color:var(--border)] p-1">
+            {(["results", "plan"] as const).map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setTab(name)}
+                className={`rounded-xl px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-colors ${
+                  tab === name
+                    ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                    : "text-[color:var(--muted)] hover:text-[color:var(--text)]"
+                }`}
+              >
+                {name === "results" ? "Results" : "Query plan"}
+                {name === "plan" && plan?.warnings.length ? ` (${plan.warnings.length})` : ""}
+              </button>
+            ))}
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-auto">
+            {queryError ? (
+              <p className="p-4 font-mono text-sm whitespace-pre-wrap text-red-600 dark:text-red-300">
+                {queryError}
+              </p>
+            ) : tab === "results" ? (
+              result ? (
+                <ResultsTable result={result} />
+              ) : (
+                <p className="p-6 text-sm text-[color:var(--muted)]">
+                  Run a query to see results.
+                </p>
+              )
+            ) : plan ? (
+              <PlanView plan={plan} />
+            ) : (
+              <p className="p-6 text-sm text-[color:var(--muted)]">
+                Plans are captured for SELECT and WITH statements. Run one to see where
+                its time goes.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
