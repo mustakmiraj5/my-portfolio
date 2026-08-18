@@ -6,7 +6,9 @@ import {
   DATASETS,
   DATASET_STORAGE_KEY,
   DEFAULT_DATASET_ID,
+  IMPORTED_DATASET_ID,
   RESET_SQL,
+  findUnsupportedCopy,
   getDataset,
 } from "./datasets";
 import {
@@ -81,6 +83,7 @@ export function useDatabase() {
   const [error, setError] = useState<string | null>(null);
   const [schema, setSchema] = useState<Table[]>([]);
   const [datasetId, setDatasetId] = useState<string>(DEFAULT_DATASET_ID);
+  const [importName, setImportName] = useState<string | null>(null);
 
   const readSchema = useCallback(async (db: PGlite): Promise<Table[]> => {
     const [cols, idx, pks, counts] = await Promise.all([
@@ -90,25 +93,34 @@ export function useDatabase() {
         data_type: string;
         is_nullable: string;
       }>(COLUMN_SQL),
-      db.query<{ tablename: string; indexname: string; indexdef: string }>(INDEX_SQL),
+      db.query<{ tablename: string; indexname: string; indexdef: string }>(
+        INDEX_SQL,
+      ),
       db.query<{ table_name: string; column_name: string }>(PK_SQL),
       db.query<{ relname: string; estimate: number }>(ROWCOUNT_SQL),
     ]);
 
-    const pkSet = new Set(pks.rows.map((r) => `${r.table_name}.${r.column_name}`));
+    const pkSet = new Set(
+      pks.rows.map((r) => `${r.table_name}.${r.column_name}`),
+    );
     const rowCounts = new Map(
       counts.rows.map((r) => {
         const n = Number(r.estimate);
         return [r.relname, n < 0 ? null : n] as const;
-      })
+      }),
     );
 
     // A column counts as indexed if any index definition mentions it.
     const indexedColumns = new Set<string>();
     for (const row of idx.rows) {
-      const inside = row.indexdef.slice(row.indexdef.indexOf("(") + 1, row.indexdef.lastIndexOf(")"));
+      const inside = row.indexdef.slice(
+        row.indexdef.indexOf("(") + 1,
+        row.indexdef.lastIndexOf(")"),
+      );
       for (const part of inside.split(",")) {
-        indexedColumns.add(`${row.tablename}.${part.trim().split(" ")[0].replace(/"/g, "")}`);
+        indexedColumns.add(
+          `${row.tablename}.${part.trim().split(" ")[0].replace(/"/g, "")}`,
+        );
       }
     }
 
@@ -149,10 +161,11 @@ export function useDatabase() {
       // clears any tables the user created. ANALYZE last, or the planner has
       // no statistics and every estimate is a guess.
       await db.exec(`${RESET_SQL}\n${getDataset(id).sql}\nANALYZE;`);
+      setImportName(null);
       setSchema(await readSchema(db));
       setStatus("ready");
     },
-    [readSchema]
+    [readSchema],
   );
 
   useEffect(() => {
@@ -172,7 +185,9 @@ export function useDatabase() {
 
         const stored = localStorage.getItem(DATASET_STORAGE_KEY);
         const initial =
-          stored && DATASETS.some((d) => d.id === stored) ? stored : DEFAULT_DATASET_ID;
+          stored && DATASETS.some((d) => d.id === stored)
+            ? stored
+            : DEFAULT_DATASET_ID;
         await seed(db, initial);
       } catch (e) {
         if (!cancelled) {
@@ -198,8 +213,13 @@ export function useDatabase() {
         const elapsedMs = performance.now() - started;
 
         // Report the last statement that returned a shape worth showing.
-        const last = [...results].reverse().find((r) => r.fields.length > 0) ?? results.at(-1);
-        const affected = results.reduce((sum, r) => sum + (r.affectedRows ?? 0), 0);
+        const last =
+          [...results].reverse().find((r) => r.fields.length > 0) ??
+          results.at(-1);
+        const affected = results.reduce(
+          (sum, r) => sum + (r.affectedRows ?? 0),
+          0,
+        );
 
         setSchema(await readSchema(db));
 
@@ -207,7 +227,9 @@ export function useDatabase() {
           result: {
             columns: last?.fields.map((f) => f.name) ?? [],
             rows: (last?.rows ?? []).map((row) =>
-              (last?.fields ?? []).map((f) => (row as Record<string, unknown>)[f.name])
+              (last?.fields ?? []).map(
+                (f) => (row as Record<string, unknown>)[f.name],
+              ),
             ),
             rowCount: last?.rows.length ?? 0,
             elapsedMs,
@@ -222,7 +244,7 @@ export function useDatabase() {
         return { error: e instanceof Error ? e.message : String(e) };
       }
     },
-    [readSchema]
+    [readSchema],
   );
 
   const explain = useCallback(
@@ -239,24 +261,31 @@ export function useDatabase() {
       const body = sql.trim().replace(/;\s*$/, "");
       try {
         const res = await db.query<Record<string, unknown>>(
-          `EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON) ${body}`
+          `EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON) ${body}`,
         );
         const raw = res.rows[0]?.["QUERY PLAN"];
-        const parsed = (typeof raw === "string" ? JSON.parse(raw) : raw) as ExplainResult[];
-        if (!parsed?.[0]?.Plan) return { error: "Could not read the query plan." };
+        const parsed = (
+          typeof raw === "string" ? JSON.parse(raw) : raw
+        ) as ExplainResult[];
+        if (!parsed?.[0]?.Plan)
+          return { error: "Could not read the query plan." };
         return { plan: analyzeExplain(parsed[0]) };
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) };
       }
     },
-    []
+    [],
   );
 
   /** Re-seed the current dataset, discarding any changes. */
   const reset = useCallback(async () => {
     const db = dbRef.current;
     if (!db) return;
-    await seed(db, datasetId);
+    // An imported file cannot be re-seeded — fall back to the default dataset.
+    await seed(
+      db,
+      datasetId === IMPORTED_DATASET_ID ? DEFAULT_DATASET_ID : datasetId,
+    );
   }, [seed, datasetId]);
 
   /** Swap to a different practice dataset. */
@@ -266,8 +295,63 @@ export function useDatabase() {
       if (!db) return;
       await seed(db, id);
     },
-    [seed]
+    [seed],
   );
 
-  return { status, error, schema, datasetId, run, explain, reset, loadDataset };
+  /**
+   * Replace the database with the contents of a user-supplied .sql file.
+   * The file is read in the browser and executed against the local instance —
+   * it is never uploaded anywhere.
+   */
+  const importSql = useCallback(
+    async (sql: string, fileName: string): Promise<{ error?: string }> => {
+      const db = dbRef.current;
+      if (!db) return { error: "Database is still starting up." };
+
+      if (!sql.trim()) return { error: "That file is empty." };
+      if (findUnsupportedCopy(sql)) {
+        return {
+          error:
+            "This file uses `COPY ... FROM stdin`, which is psql's wire protocol rather than SQL — no engine can run it from a script. Re-export with `pg_dump --inserts` (or `--column-inserts`) and try again.",
+        };
+      }
+
+      const previousId = datasetId;
+      const previousName = importName;
+
+      setDatasetId(IMPORTED_DATASET_ID);
+      setImportName(fileName);
+      setStatus("seeding");
+
+      try {
+        await db.exec(`${RESET_SQL}\n${sql}\nANALYZE;`);
+        setSchema(await readSchema(db));
+        setStatus("ready");
+        return {};
+      } catch (e) {
+        // PGlite runs a multi-statement script in one transaction, so a failure
+        // anywhere rolls back the DROP SCHEMA too — the database the user had
+        // before the import is still intact. Restore the labels to match.
+        setDatasetId(previousId);
+        setImportName(previousName);
+        setSchema(await readSchema(db).catch(() => []));
+        setStatus("ready");
+        return { error: e instanceof Error ? e.message : String(e) };
+      }
+    },
+    [readSchema, datasetId, importName],
+  );
+
+  return {
+    status,
+    error,
+    schema,
+    datasetId,
+    importName,
+    run,
+    explain,
+    reset,
+    loadDataset,
+    importSql,
+  };
 }

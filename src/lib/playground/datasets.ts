@@ -877,6 +877,26 @@ export const DEFAULT_DATASET_ID = golf.id;
 /** Persisted so a restored query is never run against a different schema. */
 export const DATASET_STORAGE_KEY = "playground:dataset";
 
+/**
+ * Marks the database as loaded from a user's file rather than a built-in
+ * dataset. Deliberately not a member of DATASETS, so the stored-id check
+ * rejects it on reload — an imported file cannot be re-seeded from scratch.
+ */
+export const IMPORTED_DATASET_ID = "imported";
+
+/** Parsed in the main thread, so a runaway file would freeze the tab. */
+export const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
+/**
+ * `pg_dump` writes table data as `COPY ... FROM stdin` followed by a raw data
+ * block terminated by `\.` — a psql wire-protocol construct, not SQL, so no
+ * SQL engine can execute it from a script. Worth catching by name, because the
+ * raw error ("syntax error at or near ...") points nowhere useful.
+ */
+export function findUnsupportedCopy(sql: string): boolean {
+  return /^\s*COPY\s+[^;]*\bFROM\s+stdin\b/im.test(sql);
+}
+
 export function getDataset(id: string): Dataset {
   return DATASETS.find((d) => d.id === id) ?? DATASETS[0];
 }

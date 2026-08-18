@@ -42,6 +42,16 @@ Each ships six guided snippets that walk the same arc: a slow query → the inde
 
 Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nullable so `LEFT JOIN` and anti-joins have a real target, `transfers` holds two foreign keys into `accounts` so both sides must be joined separately, `categories.parent_id` is self-referential, and `project_assignments` is a genuine many-to-many.
 
+### Importing your own schema
+
+**Import .sql** (or drag a file onto the page) replaces the database with the contents of a `.sql` file. The file is read with the File API and executed against the local instance — it is never uploaded, because there is no server to upload it to.
+
+- Imports are **atomic**: PGlite runs a multi-statement script in one transaction, so a file that fails partway rolls back the `DROP SCHEMA` too and leaves your previous database untouched
+- The schema browser and autocomplete pick up imported tables immediately
+- 10 MB limit, since the file is parsed on the main thread
+- Imported state is not persisted — a reload returns to a built-in dataset, and the saved query is discarded rather than run against a schema that no longer exists
+- `pg_dump` files using `COPY ... FROM stdin` are rejected with a pointer to `pg_dump --inserts`. That block is psql's wire protocol, not SQL, so no engine can execute it from a script
+
 ### Current features
 
 **Schema browser**
@@ -55,7 +65,15 @@ Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nul
 - **Schema-aware autocomplete** — table names suggested with row counts, columns with type and index status
 - **Alias resolution** — `FROM reservations r` makes `r.` complete that table's columns. Resolution scans the whole document, so it works when the alias is typed *before* its `FROM` clause exists (lang-sql alone only scans backwards from the cursor)
 - Multi-statement execution, `⌘`/`Ctrl` + `Enter` to run
-- Last query persisted to local storage
+- Last query persisted to local storage, scoped to the dataset it was written against
+
+**Query history**
+- Every run is recorded — successes with row count and timing, failures marked as such
+- Click an entry to load it back into the editor; entries from another dataset carry its name as a badge, since they would not run as-is
+- Consecutive re-runs of the same statement collapse into one entry with a `×n` counter, so hammering a query doesn't flush the list
+- Kept in local storage (50 entries), survives reloads, and stays in sync across open tabs via the `storage` event
+- Backed by `useSyncExternalStore` rather than component state: the list is rendered into markup, so reading local storage during the first render would desync hydration
+- Queries over 4,000 characters are skipped rather than truncated — a shortened query looks runnable but isn't
 
 **Query performance analysis**
 - `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)` captured automatically for every `SELECT` / `WITH`
@@ -89,6 +107,9 @@ Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nul
 - [ ] Index advisor: suggest the specific `CREATE INDEX` for a flagged scan
 - [ ] `work_mem` and cost-parameter controls to make planner behaviour tunable
 - [ ] More datasets — the list in `lib/playground/datasets.ts` is the only place to edit
+- [ ] Export the current database back out as a `.sql` file
+- [ ] Pin favourite queries so they survive the 50-entry cap
+- [ ] Support `COPY ... FROM stdin` blocks so plain `pg_dump` output loads directly
 
 ---
 
@@ -124,6 +145,7 @@ src/
 │       ├── sql-editor.tsx     # CodeMirror + schema-aware completion
 │       ├── schema-sidebar.tsx # Introspected tables, columns, indexes
 │       ├── results-table.tsx  # Result grid
+│       ├── history-panel.tsx  # Query history list
 │       └── plan-view.tsx      # Plan tree and warnings
 └── lib/
     ├── medium.ts              # Medium RSS feed fetching
@@ -133,5 +155,6 @@ src/
     └── playground/
         ├── use-database.ts    # PGlite lifecycle, introspection, query + explain
         ├── plan.ts            # EXPLAIN JSON parsing and warning heuristics
+        ├── history.ts         # localStorage-backed query history store
         └── datasets.ts        # The five practice datasets and their snippets
 ```

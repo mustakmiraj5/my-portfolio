@@ -26,7 +26,8 @@ export default function PlaygroundPage() {
             tab — no server, no connection string, nothing to break. Pick one of five
             practice datasets below. Each is seeded with six figures of rows and
             deliberately under-indexed, so you can run a query, read its plan, add the
-            right index, and watch a sequential scan become an index scan.
+            right index, and watch a sequential scan become an index scan — or import
+            your own <code>.sql</code> file to explore a schema of your own.
           </p>
         </header>
 
