@@ -22,9 +22,25 @@ Personal portfolio site built with Next.js, Tailwind CSS, and TypeScript. Featur
 
 **[mustakmiraj.vercel.app/playground](https://mustakmiraj.vercel.app/playground)**
 
-A real PostgreSQL instance compiled to WebAssembly, running entirely in the browser tab. No server, no connection string, no credentials — which also means no SSRF surface and nothing to take down. Boots and seeds ~140,000 rows in about 2.5 seconds.
+A real PostgreSQL instance compiled to WebAssembly, running entirely in the browser tab. No server, no connection string, no credentials — which also means no SSRF surface and nothing to take down.
 
-The dataset is a golf reservation schema (`courses`, `players`, `reservations`) that is **deliberately under-indexed**: only primary keys exist. A first range query sequential-scans 120,000 rows, and adding the right index visibly flips the plan.
+Every dataset is **deliberately under-indexed**: only primary keys exist. A first query sequential-scans a large table, and adding the right index visibly flips the plan.
+
+### Datasets
+
+Switching drops the whole `public` schema and re-seeds, so datasets never bleed into each other — and any tables you created are cleared too. The selection is persisted, so a reload returns you to the dataset your saved query belongs to.
+
+| Dataset | Tables | Rows | Practises |
+| --- | --- | --- | --- |
+| Golf ticket reservations | `courses`, `players`, `ticket_types`, `tickets`, `reservations`, `payments` | ≈260k | Nullable FKs, redemption funnels, `NOT EXISTS` |
+| E-commerce orders | `categories`, `customers`, `products`, `orders`, `order_items`, `shipments` | ≈201k | Multi-table joins, category self-join, date lag |
+| Banking transactions | `branches`, `customers`, `accounts`, `transactions`, `transfers` | ≈204k | Window functions, double-join on one table |
+| Employee directory | `departments`, `employees`, `salaries`, `projects`, `project_assignments` | ≈175k | Self-joins, many-to-many allocation, salary history |
+| Web analytics | `visitors`, `sessions`, `page_views`, `events` | ≈302k | Time bucketing, funnels, correlated `EXISTS` |
+
+Each ships six guided snippets that walk the same arc: a slow query → the index that fixes it → progressively harder joins and aggregates. Data is generated with modulo arithmetic over `generate_series` rather than `random()`, so every visitor gets identical rows and identical plans. Seeding takes 1.1–2.3s per dataset.
+
+Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nullable so `LEFT JOIN` and anti-joins have a real target, `transfers` holds two foreign keys into `accounts` so both sides must be joined separately, `categories.parent_id` is self-referential, and `project_assignments` is a genuine many-to-many.
 
 ### Current features
 
@@ -32,7 +48,7 @@ The dataset is a golf reservation schema (`courses`, `players`, `reservations`) 
 - Live introspection from `information_schema` and `pg_indexes` — not a hardcoded schema
 - Columns annotated with type, `pk`, and `indexed` markers
 - Approximate row counts from `pg_class.reltuples`, the same figure the planner uses
-- Refreshes automatically after any DDL
+- Refreshes automatically after any DDL, and after switching dataset
 
 **SQL editor**
 - CodeMirror 6 with PostgreSQL syntax highlighting, light/dark aware
@@ -57,15 +73,11 @@ The dataset is a golf reservation schema (`courses`, `players`, `reservations`) 
 - Row estimates are compared **per loop**, since Postgres reports `Plan Rows` per loop but actual rows are averaged across them
 - Nodes beneath a `LIMIT` are excluded from mis-estimate warnings: a top-N sort stops early, so its actual row count is truncated and comparing it to the estimate reports a problem that isn't there
 
-### Guided snippets
-
-Five presets walk the lesson end to end: slow range scan → add the index → join without one → row-estimate trap → sort that spills.
-
 ### Known limitations
 
 - **Postgres, not MySQL.** No mature MySQL-in-WASM equivalent exists.
 - **Runs on the main thread.** Seeding briefly blocks the UI.
-- **Ephemeral.** The database lives in the tab; reloading rebuilds it from the seed script.
+- **Ephemeral.** The database lives in the tab; reloading re-seeds the dataset you were last on.
 - `SELECT u.` with no `FROM` clause anywhere cannot resolve — nothing yet defines `u`.
 
 ### Planned
@@ -76,6 +88,7 @@ Five presets walk the lesson end to end: slow range scan → add the index → j
 - [ ] Shareable permalinks for a query and its plan
 - [ ] Index advisor: suggest the specific `CREATE INDEX` for a flagged scan
 - [ ] `work_mem` and cost-parameter controls to make planner behaviour tunable
+- [ ] More datasets — the list in `lib/playground/datasets.ts` is the only place to edit
 
 ---
 
@@ -120,5 +133,5 @@ src/
     └── playground/
         ├── use-database.ts    # PGlite lifecycle, introspection, query + explain
         ├── plan.ts            # EXPLAIN JSON parsing and warning heuristics
-        └── seed.ts            # Demo schema, seed data, guided snippets
+        └── datasets.ts        # The five practice datasets and their snippets
 ```

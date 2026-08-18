@@ -5,7 +5,7 @@ import Playground from "@/components/playground/playground";
 export const metadata: Metadata = {
   title: "SQL Playground | Mustak Sahariar Miraj",
   description:
-    "A real Postgres running in your browser via WebAssembly. Explore the schema, run raw SQL, and read the EXPLAIN ANALYZE plan to see exactly where a query spends its time.",
+    "A real Postgres running in your browser via WebAssembly. Pick a practice dataset, explore the schema, run raw SQL, and read the EXPLAIN ANALYZE plan to see exactly where a query spends its time.",
   alternates: { canonical: "/playground" },
 };
 
@@ -23,9 +23,10 @@ export default function PlaygroundPage() {
           <h1 className="text-3xl font-semibold sm:text-4xl">SQL Playground</h1>
           <p className="max-w-3xl text-base leading-7 text-[color:var(--muted)]">
             A real PostgreSQL instance compiled to WebAssembly, running entirely in this
-            tab — no server, no connection string, nothing to break. It is seeded with a
-            golf reservation schema of 120,000 rows and deliberately under-indexed, so
-            you can watch a query plan change when you add the right index.
+            tab — no server, no connection string, nothing to break. Pick one of five
+            practice datasets below. Each is seeded with six figures of rows and
+            deliberately under-indexed, so you can run a query, read its plan, add the
+            right index, and watch a sequential scan become an index scan.
           </p>
         </header>
 

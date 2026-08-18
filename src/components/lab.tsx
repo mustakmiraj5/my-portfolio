@@ -6,7 +6,7 @@ const experiments = [
     title: "SQL Playground",
     href: "/playground",
     blurb:
-      "A real PostgreSQL instance compiled to WebAssembly, running entirely in the browser — no server, no connection string. Seeded with 120,000 deliberately under-indexed rows, it reads the EXPLAIN ANALYZE plan back to you: scans that discard most of what they read, planner estimates off by orders of magnitude, sorts spilling to disk. Add an index, re-run, and watch Seq Scan become Index Scan.",
+      "A real PostgreSQL instance compiled to WebAssembly, running entirely in the browser — no server, no connection string. Five practice datasets (reservations, e-commerce, banking, HR, web analytics), each seeded with six figures of deliberately under-indexed rows. It reads the EXPLAIN ANALYZE plan back to you: scans that discard most of what they read, planner estimates off by orders of magnitude, sorts spilling to disk. Add an index, re-run, and watch Seq Scan become Index Scan.",
     tags: ["PGlite", "WebAssembly", "PostgreSQL", "Next.js"],
     cta: "Try it live",
   },

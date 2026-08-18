@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PGlite } from "@electric-sql/pglite";
-import { SEED_SQL } from "./seed";
+import {
+  DATASETS,
+  DATASET_STORAGE_KEY,
+  DEFAULT_DATASET_ID,
+  RESET_SQL,
+  getDataset,
+} from "./datasets";
 import {
   analyzeExplain,
   isExplainable,
@@ -74,6 +80,7 @@ export function useDatabase() {
   const [status, setStatus] = useState<DbStatus>("booting");
   const [error, setError] = useState<string | null>(null);
   const [schema, setSchema] = useState<Table[]>([]);
+  const [datasetId, setDatasetId] = useState<string>(DEFAULT_DATASET_ID);
 
   const readSchema = useCallback(async (db: PGlite): Promise<Table[]> => {
     const [cols, idx, pks, counts] = await Promise.all([
@@ -135,9 +142,13 @@ export function useDatabase() {
   }, []);
 
   const seed = useCallback(
-    async (db: PGlite) => {
+    async (db: PGlite, id: string) => {
+      setDatasetId(id);
       setStatus("seeding");
-      await db.exec(SEED_SQL);
+      // RESET_SQL drops the whole public schema, so switching datasets also
+      // clears any tables the user created. ANALYZE last, or the planner has
+      // no statistics and every estimate is a guess.
+      await db.exec(`${RESET_SQL}\n${getDataset(id).sql}\nANALYZE;`);
       setSchema(await readSchema(db));
       setStatus("ready");
     },
@@ -158,7 +169,11 @@ export function useDatabase() {
           return;
         }
         dbRef.current = db;
-        await seed(db);
+
+        const stored = localStorage.getItem(DATASET_STORAGE_KEY);
+        const initial =
+          stored && DATASETS.some((d) => d.id === stored) ? stored : DEFAULT_DATASET_ID;
+        await seed(db, initial);
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : String(e));
@@ -237,11 +252,22 @@ export function useDatabase() {
     []
   );
 
+  /** Re-seed the current dataset, discarding any changes. */
   const reset = useCallback(async () => {
     const db = dbRef.current;
     if (!db) return;
-    await seed(db);
-  }, [seed]);
+    await seed(db, datasetId);
+  }, [seed, datasetId]);
 
-  return { status, error, schema, run, explain, reset };
+  /** Swap to a different practice dataset. */
+  const loadDataset = useCallback(
+    async (id: string) => {
+      const db = dbRef.current;
+      if (!db) return;
+      await seed(db, id);
+    },
+    [seed]
+  );
+
+  return { status, error, schema, datasetId, run, explain, reset, loadDataset };
 }
