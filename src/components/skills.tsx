@@ -40,10 +40,12 @@ const skillGroups = [
   },
 ];
 
+import { revealDelay } from "@/lib/reveal";
+
 export default function Skills() {
   return (
     <section id="skills" className="grid gap-8">
-      <div>
+      <div data-reveal>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Skills
         </p>
@@ -52,10 +54,12 @@ export default function Skills() {
         </h2>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {skillGroups.map((group) => (
+        {skillGroups.map((group, index) => (
           <div
             key={group.title}
-            className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6"
+            data-reveal
+            style={revealDelay(index * 110)}
+            className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 transition duration-300 hover:-translate-y-1 hover:border-[color:var(--accent)]"
           >
             <h3 className="text-lg font-semibold text-[color:var(--text)]">
               {group.title}

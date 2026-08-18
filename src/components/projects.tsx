@@ -22,10 +22,12 @@ const projects = [
   },
 ];
 
+import { revealDelay } from "@/lib/reveal";
+
 export default function Projects() {
   return (
     <section id="projects" className="grid gap-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div data-reveal className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
             Selected work
@@ -42,10 +44,12 @@ export default function Projects() {
         </a>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
-        {projects.map((project) => (
+        {projects.map((project, index) => (
           <article
             key={project.title}
-            className="flex h-full flex-col gap-6 rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 shadow-[var(--shadow)]"
+            data-reveal
+            style={revealDelay(index * 130)}
+            className="flex h-full flex-col gap-6 rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1 hover:border-[color:var(--accent)]"
           >
             <div>
               <div className="flex flex-wrap items-baseline gap-3">

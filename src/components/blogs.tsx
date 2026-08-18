@@ -1,9 +1,10 @@
 import { BlogPost } from "@/lib/medium";
+import { revealDelay } from "@/lib/reveal";
 
 export default function Blogs({ posts }: { posts: BlogPost[] }) {
   return (
     <section id="blogs" className="grid gap-8">
-      <div>
+      <div data-reveal>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Writing
         </p>
@@ -13,13 +14,15 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
       </div>
       <div className="grid gap-4">
         {posts.length > 0 ? (
-          posts.map((post) => (
+          posts.map((post, index) => (
             <a
               key={post.link}
               href={post.link}
               target="_blank"
               rel="noreferrer"
-              className="flex flex-col gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 transition hover:-translate-y-0.5"
+              data-reveal
+              style={revealDelay(index * 90)}
+              className="flex flex-col gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 transition duration-300 hover:-translate-y-1 hover:border-[color:var(--accent)]"
             >
               <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
                 <span>{post.date}</span>
@@ -31,7 +34,7 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
             </a>
           ))
         ) : (
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 text-sm text-[color:var(--muted)]">
+          <div data-reveal className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 text-sm text-[color:var(--muted)]">
             Blog posts will appear here once the Medium feed is reachable.
           </div>
         )}

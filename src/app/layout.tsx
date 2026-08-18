@@ -38,6 +38,9 @@ export default function RootLayout({
                   var next = stored === "light" || stored === "dark" ? stored : preferred;
                   document.documentElement.classList.toggle("dark", next === "dark");
                 } catch (e) {}
+                // Arm scroll-reveal only when JS is running, so the content
+                // is never left hidden for no-JS visitors or crawlers.
+                document.documentElement.classList.add("js-reveal");
               })();
             `,
           }}

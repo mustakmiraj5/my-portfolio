@@ -25,10 +25,12 @@ const roles = [
   },
 ];
 
+import { revealDelay } from "@/lib/reveal";
+
 export default function Experience() {
   return (
     <section id="experience" className="grid gap-8">
-      <div>
+      <div data-reveal>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Experience
         </p>
@@ -37,10 +39,12 @@ export default function Experience() {
         </h2>
       </div>
       <div className="grid gap-6">
-        {roles.map((role) => (
+        {roles.map((role, index) => (
           <article
             key={`${role.company}-${role.title}`}
-            className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 shadow-[var(--shadow)] sm:p-8"
+            data-reveal
+            style={revealDelay(index * 120)}
+            className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-6 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1 hover:border-[color:var(--accent)] sm:p-8"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="text-xl font-semibold text-[color:var(--text)]">

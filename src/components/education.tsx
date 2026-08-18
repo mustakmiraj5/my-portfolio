@@ -18,10 +18,15 @@ const education = [
   },
 ];
 
+import { revealDelay } from "@/lib/reveal";
+
 export default function Education() {
   return (
     <section id="education" className="grid gap-8 lg:grid-cols-2">
-      <div className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-8 shadow-[var(--shadow)]">
+      <div
+        data-reveal="left"
+        className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-8 shadow-[var(--shadow)]"
+      >
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Publications & Achievements
         </p>
@@ -40,7 +45,11 @@ export default function Education() {
           ))}
         </ul>
       </div>
-      <div className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-8 shadow-[var(--shadow)]">
+      <div
+        data-reveal="right"
+        style={revealDelay(120)}
+        className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-8 shadow-[var(--shadow)]"
+      >
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Education
         </p>

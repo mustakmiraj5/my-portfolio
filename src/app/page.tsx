@@ -8,6 +8,7 @@ import Blogs from "@/components/blogs";
 import Education from "@/components/education";
 import Contact from "@/components/contact";
 import Footer from "@/components/footer";
+import ScrollReveal from "@/components/scroll-reveal";
 import { fetchMediumPosts } from "@/lib/medium";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function Home() {
 
   return (
     <div className="relative min-h-screen text-[color:var(--text)]">
+      <ScrollReveal />
       <Header />
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-6 py-16">

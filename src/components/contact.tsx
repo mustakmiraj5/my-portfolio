@@ -1,7 +1,12 @@
+import { revealDelay } from "@/lib/reveal";
+
 export default function Contact() {
   return (
     <section id="contact" className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-      <div className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-8">
+      <div
+        data-reveal="left"
+        className="rounded-3xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-8"
+      >
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Contact
         </p>
@@ -13,7 +18,7 @@ export default function Contact() {
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
           <a
-            className="rounded-full bg-[color:var(--accent)] px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-black"
+            className="rounded-full bg-[color:var(--btn-bg)] px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--on-accent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--btn-bg-hover)]"
             href="mailto:msmiraj8@gmail.com"
           >
             Email me
@@ -41,10 +46,12 @@ export default function Contact() {
             label: "Availability",
             value: "Open to opportunities",
           },
-        ].map((item) => (
+        ].map((item, index) => (
           <div
             key={item.label}
-            className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-5"
+            data-reveal="right"
+            style={revealDelay(index * 110)}
+            className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-5 transition duration-300 hover:-translate-y-1 hover:border-[color:var(--accent)]"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
               {item.label}
