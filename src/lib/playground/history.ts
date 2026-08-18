@@ -113,7 +113,11 @@ export function record(entry: RecordInput) {
   const now = Date.now();
 
   // Re-running the same statement shouldn't push everything else out.
-  if (newest && newest.sql === entry.sql && newest.datasetId === entry.datasetId) {
+  if (
+    newest &&
+    newest.sql === entry.sql &&
+    newest.datasetId === entry.datasetId
+  ) {
     const merged: HistoryEntry = {
       ...newest,
       ...entry,

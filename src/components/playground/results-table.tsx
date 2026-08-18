@@ -8,7 +8,8 @@ function render(value: unknown) {
   if (value === null || value === undefined) {
     return <span className="italic text-[color:var(--muted)]">NULL</span>;
   }
-  if (value instanceof Date) return value.toISOString().replace("T", " ").slice(0, 19);
+  if (value instanceof Date)
+    return value.toISOString().replace("T", " ").slice(0, 19);
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
@@ -58,7 +59,8 @@ export default function ResultsTable({ result }: { result: QueryResult }) {
       </div>
       {result.rows.length > MAX_ROWS ? (
         <p className="border-t border-[color:var(--border)] px-3 py-2 text-xs text-[color:var(--muted)]">
-          Showing first {MAX_ROWS} of {result.rows.length.toLocaleString()} rows.
+          Showing first {MAX_ROWS} of {result.rows.length.toLocaleString()}{" "}
+          rows.
         </p>
       ) : null}
     </div>

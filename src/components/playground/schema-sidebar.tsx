@@ -10,15 +10,43 @@ export default function SchemaSidebar({
   schema: Table[];
   onInsert: (text: string) => void;
 }) {
-  const [open, setOpen] = useState<string | null>(schema[0]?.name ?? null);
+  // A set, not a single name: these schemas run to nine tables and comparing
+  // two of them shouldn't mean collapsing one. Parent remounts this component
+  // per dataset, so the initial value always matches the schema on screen.
+  const [open, setOpen] = useState<Set<string>>(
+    () => new Set(schema[0] ? [schema[0].name] : []),
+  );
+
+  const allOpen = schema.length > 0 && open.size === schema.length;
+
+  const toggle = (name: string) =>
+    setOpen((current) => {
+      const next = new Set(current);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
 
   return (
     <aside className="flex flex-col gap-2">
-      <p className="px-1 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
-        Schema
-      </p>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
+          Schema
+        </p>
+        {schema.length > 1 ? (
+          <button
+            type="button"
+            onClick={() =>
+              setOpen(allOpen ? new Set() : new Set(schema.map((t) => t.name)))
+            }
+            className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[color:var(--muted)] transition-colors hover:text-[color:var(--accent)]"
+          >
+            {allOpen ? "Collapse all" : "Expand all"}
+          </button>
+        ) : null}
+      </div>
       {schema.map((table) => {
-        const expanded = open === table.name;
+        const expanded = open.has(table.name);
         return (
           <div
             key={table.name}
@@ -26,7 +54,7 @@ export default function SchemaSidebar({
           >
             <button
               type="button"
-              onClick={() => setOpen(expanded ? null : table.name)}
+              onClick={() => toggle(table.name)}
               aria-expanded={expanded}
               className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-[color:var(--accent-soft)]/40"
             >
@@ -51,8 +79,12 @@ export default function SchemaSidebar({
                         title="Insert into editor"
                         className="flex w-full items-baseline gap-2 text-left font-mono text-xs transition-colors hover:text-[color:var(--accent)]"
                       >
-                        <span className="text-[color:var(--text)]">{col.name}</span>
-                        <span className="text-[color:var(--muted)]">{col.type}</span>
+                        <span className="text-[color:var(--text)]">
+                          {col.name}
+                        </span>
+                        <span className="text-[color:var(--muted)]">
+                          {col.type}
+                        </span>
                         {col.isPrimaryKey ? (
                           <span className="rounded bg-[color:var(--accent-soft)] px-1 text-[9px] font-bold uppercase tracking-wide text-[color:var(--accent)]">
                             pk

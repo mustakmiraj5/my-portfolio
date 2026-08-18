@@ -5,7 +5,7 @@ import Playground from "@/components/playground/playground";
 export const metadata: Metadata = {
   title: "SQL Playground | Mustak Sahariar Miraj",
   description:
-    "A real Postgres running in your browser via WebAssembly. Pick a practice dataset, explore the schema, run raw SQL, and read the EXPLAIN ANALYZE plan to see exactly where a query spends its time.",
+    "A real Postgres running in your browser via WebAssembly. Pick one of six practice schemas, explore the tables, run raw SQL, and read the EXPLAIN ANALYZE plan to see exactly where a query spends its time.",
   alternates: { canonical: "/playground" },
 };
 
@@ -22,11 +22,12 @@ export default function PlaygroundPage() {
           </Link>
           <h1 className="text-3xl font-semibold sm:text-4xl">SQL Playground</h1>
           <p className="max-w-3xl text-base leading-7 text-[color:var(--muted)]">
-            A real PostgreSQL instance compiled to WebAssembly, running entirely in this
-            tab — no server, no connection string, nothing to break. Pick one of five
-            practice datasets below. Each is seeded with six figures of rows and
-            deliberately under-indexed, so you can run a query, read its plan, add the
-            right index, and watch a sequential scan become an index scan — or import
+            A real PostgreSQL instance compiled to WebAssembly, running entirely
+            in this tab — no server, no connection string, nothing to break.
+            Choose one of six practice schemas below; each is fetched on demand,
+            holds seven to nine related tables, and is deliberately
+            under-indexed, so you can run a query, read its plan, add the right
+            index, and watch a sequential scan become an index scan — or import
             your own <code>.sql</code> file to explore a schema of your own.
           </p>
         </header>
@@ -34,8 +35,8 @@ export default function PlaygroundPage() {
         <Playground />
 
         <footer className="text-xs leading-6 text-[color:var(--muted)]">
-          Your database lives in this browser tab only. Reloading rebuilds it from the
-          seed script; your last query is kept in local storage.
+          Your database lives in this browser tab only. Reloading rebuilds it
+          from the seed script; your last query is kept in local storage.
         </footer>
       </main>
     </div>

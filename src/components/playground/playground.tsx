@@ -7,11 +7,12 @@ import type { QueryResult } from "@/lib/playground/use-database";
 import type { AnalyzedPlan } from "@/lib/playground/plan";
 import { isExplainable } from "@/lib/playground/plan";
 import {
-  DATASETS,
+  DATASET_MANIFEST,
   DATASET_STORAGE_KEY,
   IMPORTED_DATASET_ID,
   MAX_IMPORT_BYTES,
-  getDataset,
+  getMeta,
+  isBuiltIn,
 } from "@/lib/playground/datasets";
 import SchemaSidebar from "./schema-sidebar";
 import ResultsTable from "./results-table";
@@ -41,24 +42,24 @@ export default function Playground() {
     reset,
     loadDataset,
     importSql,
+    snippets,
   } = useDatabase();
 
   const history = useHistory();
-  const builtIn = DATASETS.find((d) => d.id === datasetId);
-  const dataset = getDataset(datasetId);
+  const meta = getMeta(datasetId);
   const isImported = datasetId === IMPORTED_DATASET_ID;
 
   // Lazy init rather than an effect: `sql` never reaches the server-rendered
   // markup (the editor is ssr:false), so reading storage here can't desync
   // hydration, and it avoids a cascading render on mount.
   const [sql, setSql] = useState(() => {
-    const fallback = DATASETS[0].snippets[0].sql;
+    const fallback = DATASET_MANIFEST[0].starterSql;
     if (typeof window === "undefined") return fallback;
     // Only restore the saved query if the dataset it was written against is
     // the one that will load. After an import — which cannot be re-seeded —
     // the stored id is invalid, so the query would hit missing tables.
     const storedDataset = localStorage.getItem(DATASET_STORAGE_KEY);
-    if (!DATASETS.some((d) => d.id === storedDataset)) return fallback;
+    if (!storedDataset || !isBuiltIn(storedDataset)) return fallback;
     return localStorage.getItem(STORAGE_KEY) ?? fallback;
   });
   const [result, setResult] = useState<QueryResult | null>(null);
@@ -80,7 +81,7 @@ export default function Playground() {
     setRunning(true);
     setQueryError(null);
 
-    const datasetName = builtIn?.name ?? importName ?? "Imported";
+    const datasetName = isImported ? (importName ?? "Imported") : meta.name;
     const { result: next, error } = await run(sql);
 
     if (error) {
@@ -172,7 +173,7 @@ export default function Playground() {
       setPlan(null);
       setQueryError(null);
       localStorage.setItem(DATASET_STORAGE_KEY, id);
-      updateSql(getDataset(id).snippets[0].sql);
+      updateSql(getMeta(id).starterSql);
       await loadDataset(id);
     },
     [datasetId, status, updateSql, loadDataset],
@@ -213,29 +214,34 @@ export default function Playground() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Dataset
         </p>
-        <div className="flex flex-wrap gap-2">
-          {DATASETS.map((option) => {
-            const active = option.id === datasetId;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => switchDataset(option.id)}
-                disabled={busy}
-                aria-pressed={active}
-                className={`flex items-baseline gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition duration-300 disabled:opacity-50 ${
-                  active
-                    ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                    : "border-[color:var(--border)] bg-[color:var(--bg-elevated)] text-[color:var(--muted)] hover:-translate-y-0.5 hover:border-[color:var(--accent)] hover:text-[color:var(--text)]"
-                }`}
-              >
-                {option.name}
-                <span className="font-mono text-[10px] opacity-70">
-                  {option.size}
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <select
+              value={datasetId}
+              onChange={(event) => switchDataset(event.target.value)}
+              disabled={busy || importing}
+              aria-label="Practice dataset"
+              className="w-full min-w-[19rem] appearance-none rounded-full border border-[color:var(--border)] bg-[color:var(--bg-elevated)] py-2 pr-10 pl-4 text-xs font-semibold text-[color:var(--text)] transition duration-300 hover:border-[color:var(--accent)] disabled:opacity-50"
+            >
+              {DATASET_MANIFEST.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name} — {option.tables} tables · {option.size}
+                </option>
+              ))}
+              {/* Keeps the control honest while a user's own file is loaded. */}
+              {isImported ? (
+                <option value={IMPORTED_DATASET_ID}>
+                  Imported: {importName ?? "your file"}
+                </option>
+              ) : null}
+            </select>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-[10px] text-[color:var(--muted)]"
+            >
+              ▼
+            </span>
+          </div>
           <label
             className={`flex cursor-pointer items-center gap-2 rounded-full border border-dashed px-4 py-2 text-xs font-semibold transition duration-300 ${
               busy || importing
@@ -261,7 +267,7 @@ export default function Playground() {
         <p className="text-sm text-[color:var(--muted)]">
           {isImported
             ? `Loaded from ${importName ?? "your file"} — it stays in this browser tab and is never uploaded.`
-            : dataset.tagline}
+            : meta.tagline}
         </p>
       </div>
 
@@ -271,10 +277,11 @@ export default function Playground() {
             <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--bg-elevated)] p-4 text-sm text-[color:var(--muted)]">
               {status === "booting"
                 ? "Starting Postgres…"
-                : `Loading ${dataset.name.toLowerCase()}…`}
+                : `Loading ${meta.name.toLowerCase()}…`}
             </div>
           ) : (
             <SchemaSidebar
+              key={datasetId}
               schema={schema}
               onInsert={(text) =>
                 updateSql(`${sql}${sql.endsWith(" ") ? "" : " "}${text}`)
@@ -294,7 +301,7 @@ export default function Playground() {
 
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap gap-2">
-            {(builtIn?.snippets ?? []).map((snippet) => (
+            {snippets.map((snippet) => (
               <button
                 key={snippet.label}
                 type="button"

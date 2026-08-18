@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PGlite } from "@electric-sql/pglite";
 import {
-  DATASETS,
   DATASET_STORAGE_KEY,
   DEFAULT_DATASET_ID,
   IMPORTED_DATASET_ID,
   RESET_SQL,
+  SYNC_SEQUENCES_SQL,
   findUnsupportedCopy,
-  getDataset,
+  isBuiltIn,
+  loadDataset as fetchDatasetModule,
+  type Snippet,
 } from "./datasets";
 import {
   analyzeExplain,
@@ -84,6 +86,8 @@ export function useDatabase() {
   const [schema, setSchema] = useState<Table[]>([]);
   const [datasetId, setDatasetId] = useState<string>(DEFAULT_DATASET_ID);
   const [importName, setImportName] = useState<string | null>(null);
+  /** Guided queries for the loaded dataset; empty for an imported file. */
+  const [snippets, setSnippets] = useState<Snippet[]>([]);
 
   const readSchema = useCallback(async (db: PGlite): Promise<Table[]> => {
     const [cols, idx, pks, counts] = await Promise.all([
@@ -153,16 +157,45 @@ export function useDatabase() {
     return [...tables.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
+  /**
+   * Loads a built-in dataset into a *fresh* PGlite instance.
+   *
+   * Re-seeding in place would be simpler, but PGlite's WebAssembly memory only
+   * ever grows: `DROP SCHEMA` returns pages to Postgres, never to the browser.
+   * Measured over four cycles of all six datasets, the tab climbed from ~1.0 GB
+   * to ~1.3 GB against a ~4.2 GB ceiling and never plateaued. Discarding the
+   * instance frees the whole linear memory and costs only the ~300 ms boot.
+   *
+   * In-memory rather than IndexedDB throughout: seeding is far faster and query
+   * timings stay comparable between runs.
+   */
   const seed = useCallback(
-    async (db: PGlite, id: string) => {
+    async (id: string) => {
       setDatasetId(id);
       setStatus("seeding");
-      // RESET_SQL drops the whole public schema, so switching datasets also
-      // clears any tables the user created. ANALYZE last, or the planner has
-      // no statistics and every estimate is a guess.
-      await db.exec(`${RESET_SQL}\n${getDataset(id).sql}\nANALYZE;`);
+
+      // Each dataset is its own chunk, so this downloads one schema, not six.
+      const dataset = await fetchDatasetModule(id);
+
+      const { PGlite: Client } = await import("@electric-sql/pglite");
+      const fresh = await Client.create();
+      const previous = dbRef.current;
+      dbRef.current = fresh;
+      if (previous) {
+        try {
+          await previous.close();
+        } catch {
+          // A failed close would only leak the old heap; nothing to recover.
+        }
+      }
+
+      // ANALYZE last, or the planner has no statistics and every estimate is
+      // a guess. The sequence sync makes SERIAL columns usable — see datasets.
+      await fresh.exec(`${dataset.sql}\n${SYNC_SEQUENCES_SQL}\nANALYZE;`);
+
+      setSnippets(dataset.snippets);
       setImportName(null);
-      setSchema(await readSchema(db));
+      setSchema(await readSchema(fresh));
       setStatus("ready");
     },
     [readSchema],
@@ -173,22 +206,15 @@ export function useDatabase() {
 
     (async () => {
       try {
-        // In-memory rather than IndexedDB: seeding 120k rows is far faster,
-        // and timings stay comparable between runs.
-        const { PGlite: Client } = await import("@electric-sql/pglite");
-        const db = await Client.create();
-        if (cancelled) {
-          await db.close();
-          return;
-        }
-        dbRef.current = db;
-
         const stored = localStorage.getItem(DATASET_STORAGE_KEY);
         const initial =
-          stored && DATASETS.some((d) => d.id === stored)
-            ? stored
-            : DEFAULT_DATASET_ID;
-        await seed(db, initial);
+          stored && isBuiltIn(stored) ? stored : DEFAULT_DATASET_ID;
+        await seed(initial);
+
+        if (cancelled) {
+          await dbRef.current?.close();
+          dbRef.current = null;
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : String(e));
@@ -279,24 +305,12 @@ export function useDatabase() {
 
   /** Re-seed the current dataset, discarding any changes. */
   const reset = useCallback(async () => {
-    const db = dbRef.current;
-    if (!db) return;
     // An imported file cannot be re-seeded — fall back to the default dataset.
-    await seed(
-      db,
-      datasetId === IMPORTED_DATASET_ID ? DEFAULT_DATASET_ID : datasetId,
-    );
+    await seed(datasetId === IMPORTED_DATASET_ID ? DEFAULT_DATASET_ID : datasetId);
   }, [seed, datasetId]);
 
   /** Swap to a different practice dataset. */
-  const loadDataset = useCallback(
-    async (id: string) => {
-      const db = dbRef.current;
-      if (!db) return;
-      await seed(db, id);
-    },
-    [seed],
-  );
+  const loadDataset = useCallback(async (id: string) => seed(id), [seed]);
 
   /**
    * Replace the database with the contents of a user-supplied .sql file.
@@ -324,7 +338,8 @@ export function useDatabase() {
       setStatus("seeding");
 
       try {
-        await db.exec(`${RESET_SQL}\n${sql}\nANALYZE;`);
+        await db.exec(`${RESET_SQL}\n${sql}\n${SYNC_SEQUENCES_SQL}\nANALYZE;`);
+        setSnippets([]);
         setSchema(await readSchema(db));
         setStatus("ready");
         return {};
@@ -348,6 +363,7 @@ export function useDatabase() {
     schema,
     datasetId,
     importName,
+    snippets,
     run,
     explain,
     reset,

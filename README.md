@@ -9,7 +9,7 @@ Personal portfolio site built with Next.js, Tailwind CSS, and TypeScript. Featur
 - **Framework:** Next.js 16 (App Router)
 - **Styling:** Tailwind CSS 4
 - **Language:** TypeScript
-- **Database (Lab):** PGlite — PostgreSQL compiled to WebAssembly
+- **Database (Lab):** PGlite — PostgreSQL compiled to WebAssembly, one code-split schema per dataset
 - **Editor (Lab):** CodeMirror 6 with schema-aware SQL completion
 - **Blog Feed:** Medium RSS via fast-xml-parser
 - **Fonts:** Space Grotesk, JetBrains Mono
@@ -28,19 +28,26 @@ Every dataset is **deliberately under-indexed**: only primary keys exist. A firs
 
 ### Datasets
 
-Switching drops the whole `public` schema and re-seeds, so datasets never bleed into each other — and any tables you created are cleared too. The selection is persisted, so a reload returns you to the dataset your saved query belongs to.
+Six schemas, each fetched only when selected: every dataset is its own bundle chunk, so the initial page carries none of their SQL. Switching **recreates the Postgres instance** rather than re-seeding in place — see the memory note below.
 
 | Dataset | Tables | Rows | Practises |
 | --- | --- | --- | --- |
-| Golf ticket reservations | `courses`, `players`, `ticket_types`, `tickets`, `reservations`, `payments` | ≈260k | Nullable FKs, redemption funnels, `NOT EXISTS` |
-| E-commerce orders | `categories`, `customers`, `products`, `orders`, `order_items`, `shipments` | ≈201k | Multi-table joins, category self-join, date lag |
-| Banking transactions | `branches`, `customers`, `accounts`, `transactions`, `transfers` | ≈204k | Window functions, double-join on one table |
-| Employee directory | `departments`, `employees`, `salaries`, `projects`, `project_assignments` | ≈175k | Self-joins, many-to-many allocation, salary history |
-| Web analytics | `visitors`, `sessions`, `page_views`, `events` | ≈302k | Time bucketing, funnels, correlated `EXISTS` |
+| E-commerce | 7 | ≈46k | Multi-table joins, revenue aggregation, anti-joins |
+| Banking | 7 | ≈38k | Window functions, running balances, date bucketing |
+| University | 8 | ≈41k | Many-to-many, weighted averages, `HAVING`, CTEs |
+| Hospital | 9 | ≈42k | Four-deep relational chains, interval arithmetic |
+| Movies | 9 | ≈45k | Composite-key bridge tables, `STRING_AGG`, index order |
+| Transportation | 7 | ≈45k | Self-referencing joins, durations, leaderboards |
 
-Each ships six guided snippets that walk the same arc: a slow query → the index that fixes it → progressively harder joins and aggregates. Data is generated with modulo arithmetic over `generate_series` rather than `random()`, so every visitor gets identical rows and identical plans. Seeding takes 1.1–2.3s per dataset.
+Every dataset is **deliberately under-indexed** beyond its primary keys and unique constraints, so a query filtering on a foreign key sequential-scans the largest table until you add the right index. Each ships six guided snippets following that arc, then schema-specific joins, aggregates and window functions. Data is generated with modulo arithmetic over `generate_series` rather than `random()`, so every visitor gets identical rows and identical plans — a snippet hint can promise a specific plan and be right. Seeding takes 0.25–0.6s per dataset.
 
-Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nullable so `LEFT JOIN` and anti-joins have a real target, `transfers` holds two foreign keys into `accounts` so both sides must be joined separately, `categories.parent_id` is self-referential, and `project_assignments` is a genuine many-to-many.
+**Movies teaches something the others can't.** `movie_cast` is keyed `(movie_id, actor_id)`, so filtering by `movie_id` uses that index while filtering by `actor_id` cannot — the leading-column rule. The column looks indexed and isn't, which is a common cause of slow queries in the wild.
+
+### Two details that would otherwise bite
+
+**`SERIAL` sequences are re-synced after every load.** Seeds insert explicit ids so foreign keys stay deterministic, which leaves each sequence at 1 — so a reader's first `INSERT INTO customers (name, email) VALUES (…)` would fail on a duplicate primary key. A `setval` pass over every serial column runs after seeding *and* after importing, since dumps carry the same problem. Verified: inserts land at 3001 on a 3,000-row table.
+
+**Switching datasets recreates the database.** PGlite's WebAssembly memory only ever grows: `DROP SCHEMA` returns pages to Postgres, never to the browser. Re-seeding in place, the tab climbed from ~1.0 GB to ~1.3 GB over four cycles of all six datasets against a ~4.2 GB ceiling, never plateauing. Discarding the instance instead keeps usage oscillating rather than climbing, at the cost of a ~300 ms boot per switch.
 
 ### Importing your own schema
 
@@ -48,6 +55,7 @@ Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nul
 
 - Imports are **atomic**: PGlite runs a multi-statement script in one transaction, so a file that fails partway rolls back the `DROP SCHEMA` too and leaves your previous database untouched
 - The schema browser and autocomplete pick up imported tables immediately
+- `SERIAL` sequences are re-synced afterwards, so inserting without an id works on an imported dump too
 - 10 MB limit, since the file is parsed on the main thread
 - Imported state is not persisted — a reload returns to a built-in dataset, and the saved query is discarded rather than run against a schema that no longer exists
 - `pg_dump` files using `COPY ... FROM stdin` are rejected with a pointer to `pg_dump --inserts`. That block is psql's wire protocol, not SQL, so no engine can execute it from a script
@@ -58,6 +66,7 @@ Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nul
 - Live introspection from `information_schema` and `pg_indexes` — not a hardcoded schema
 - Columns annotated with type, `pk`, and `indexed` markers
 - Approximate row counts from `pg_class.reltuples`, the same figure the planner uses
+- **Several tables open at once**, with expand-all / collapse-all — these schemas run to nine tables, and comparing two of them shouldn't mean collapsing one
 - Refreshes automatically after any DDL, and after switching dataset
 
 **SQL editor**
@@ -106,7 +115,7 @@ Several tables carry deliberate teaching shapes: `reservations.ticket_id` is nul
 - [ ] Shareable permalinks for a query and its plan
 - [ ] Index advisor: suggest the specific `CREATE INDEX` for a flagged scan
 - [ ] `work_mem` and cost-parameter controls to make planner behaviour tunable
-- [ ] More datasets — the list in `lib/playground/datasets.ts` is the only place to edit
+- [ ] More datasets — add a module under `lib/playground/datasets/` and one manifest entry
 - [ ] Export the current database back out as a `.sql` file
 - [ ] Pin favourite queries so they survive the 50-entry cap
 - [ ] Support `COPY ... FROM stdin` blocks so plain `pg_dump` output loads directly
@@ -156,5 +165,8 @@ src/
         ├── use-database.ts    # PGlite lifecycle, introspection, query + explain
         ├── plan.ts            # EXPLAIN JSON parsing and warning heuristics
         ├── history.ts         # localStorage-backed query history store
-        └── datasets.ts        # The five practice datasets and their snippets
+        └── datasets/
+            ├── index.ts       # Manifest, lazy loader, reset + sequence SQL
+            ├── types.ts       # Dataset and snippet types
+            └── *.ts           # One module per dataset, code-split
 ```

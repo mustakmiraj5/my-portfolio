@@ -25,10 +25,38 @@ const ALIAS_PATTERN =
 
 // Words that follow a table name but are clauses, not aliases.
 const NOT_ALIASES = new Set([
-  "where", "on", "using", "group", "order", "limit", "offset", "having",
-  "join", "inner", "left", "right", "full", "cross", "lateral", "natural",
-  "union", "except", "intersect", "window", "returning", "set", "values",
-  "for", "fetch", "as", "and", "or", "select", "from", "with", "tablesample",
+  "where",
+  "on",
+  "using",
+  "group",
+  "order",
+  "limit",
+  "offset",
+  "having",
+  "join",
+  "inner",
+  "left",
+  "right",
+  "full",
+  "cross",
+  "lateral",
+  "natural",
+  "union",
+  "except",
+  "intersect",
+  "window",
+  "returning",
+  "set",
+  "values",
+  "for",
+  "fetch",
+  "as",
+  "and",
+  "or",
+  "select",
+  "from",
+  "with",
+  "tablesample",
 ]);
 
 function extractAliases(doc: string, tables: Table[]): Record<string, string> {
@@ -49,7 +77,10 @@ function columnsOf(table: Table) {
   return table.columns.map((column) => ({
     label: column.name,
     type: "property",
-    detail: [column.type, column.isPrimaryKey ? "pk" : column.indexed ? "indexed" : null]
+    detail: [
+      column.type,
+      column.isPrimaryKey ? "pk" : column.indexed ? "indexed" : null,
+    ]
       .filter(Boolean)
       .join(" · "),
   }));
@@ -124,7 +155,10 @@ export default function SqlEditor({
   // Rebuild only when the schema or the alias set changes — the regex runs per
   // render, but the extension is only reconfigured when its result differs.
   const signature = schema
-    .map((t) => `${t.name}:${t.columns.map((c) => `${c.name}/${c.isPrimaryKey ? "p" : c.indexed ? "i" : ""}`).join(",")}`)
+    .map(
+      (t) =>
+        `${t.name}:${t.columns.map((c) => `${c.name}/${c.isPrimaryKey ? "p" : c.indexed ? "i" : ""}`).join(",")}`,
+    )
     .join("|");
   const aliasSignature = Object.entries(aliases)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -140,7 +174,7 @@ export default function SqlEditor({
       }),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [signature, aliasSignature]
+    [signature, aliasSignature],
   );
 
   return (
@@ -159,7 +193,11 @@ export default function SqlEditor({
         theme={isDark ? "dark" : "light"}
         height="220px"
         extensions={extensions}
-        basicSetup={{ foldGutter: false, autocompletion: true, highlightActiveLine: false }}
+        basicSetup={{
+          foldGutter: false,
+          autocompletion: true,
+          highlightActiveLine: false,
+        }}
       />
     </div>
   );

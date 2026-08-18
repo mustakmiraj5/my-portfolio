@@ -134,7 +134,11 @@ function walk(node: PlanNode, visit: (n: PlanNode) => void) {
  * emitted, while its estimate still covers the whole set. Comparing the two
  * would report a mis-estimate that isn't real, so those nodes are skipped.
  */
-function markTruncated(node: PlanNode, truncated = false, out = new Set<number>()) {
+function markTruncated(
+  node: PlanNode,
+  truncated = false,
+  out = new Set<number>(),
+) {
   if (truncated) out.add(node.id);
   const below = truncated || node.label === "Limit";
   node.children.forEach((child) => markTruncated(child, below, out));
@@ -146,7 +150,9 @@ function collectWarnings(root: PlanNode, executionMs: number): PlanWarning[] {
   const truncated = markTruncated(root);
 
   walk(root, (node) => {
-    const name = node.relation ? `${node.label} on ${node.relation}` : node.label;
+    const name = node.relation
+      ? `${node.label} on ${node.relation}`
+      : node.label;
 
     if (
       node.label === "Seq Scan" &&
