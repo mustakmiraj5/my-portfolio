@@ -6,19 +6,19 @@ export default function About() {
           About
         </h2>
         <p className="mt-3 text-sm leading-5 text-[color:var(--muted)] text-justify">
-          Hello! I&apos;m Miraj, a dedicated{" "}
-          <span className="font-semibold text-[color:var(--text)]">Web Developer</span>{" "}
-          with a strong passion for crafting exceptional digital experiences.
-          With{" "}
-          <span className="text-sm font-semibold text-[color:var(--accent)]">2.5+</span>{" "}
-          years of experience in application development, I thrive on turning
-          ideas into reality through clean code and innovative design. My
-          journey in web development began with a fascination for the
-          intersection of technology and creativity, and since then, I&apos;ve
-          been on a mission to create user-centric solutions that leave a
-          lasting impact. When I&apos;m not coding, you can find me exploring
-          the latest trends in software development, experimenting with new
-          technologies, or simply enjoying a good cup of coffee.
+          Hello! I&apos;m Miraj, a{" "}
+          <span className="font-semibold text-[color:var(--text)]">Software Engineer</span>{" "}
+          based in Dhaka, Bangladesh, with{" "}
+          <span className="text-sm font-semibold text-[color:var(--accent)]">nearly 2</span>{" "}
+          years building and operating AWS-hosted SaaS in TypeScript, NestJS,
+          MySQL and React. Today I own backend services for a Japanese golf
+          reservation platform—REST APIs, async job pipelines, and the
+          Linux/nginx infrastructure they run on—working daily with a Japanese
+          engineering team across a 3-hour timezone offset. I care about
+          correctness under concurrency, clear system design, and code that
+          stays maintainable long after it ships. When I&apos;m not coding, you
+          can find me solving problems on LeetCode, digging into how systems
+          like NGINX work internally, or simply enjoying a good cup of coffee.
         </p>
         <div className="mt-6">
           <a
@@ -31,10 +31,10 @@ export default function About() {
       </div>
       <div className="grid gap-4">
         {[
-          "API design and backend systems with NestJS",
-          "Database modeling with Prisma ORM",
-          "Containerized deployments with Docker",
-          "Cloud infrastructure on AWS (EC2, RDS, CloudFormation)",
+          "REST API design and backend services with NestJS",
+          "Async job pipelines with SQS, BullMQ and DLQ redrive",
+          "Data modeling with Prisma over MySQL and MongoDB",
+          "Production ops on AWS — EC2, nginx, ALB, PM2, CloudWatch",
         ].map((item) => (
           <div
             key={item}

@@ -19,8 +19,9 @@ export default function Contact() {
             Email me
           </a>
           <a
-            className="rounded-full border border-[color:var(--border)] px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--text)]"
-            href="#"
+            className="rounded-full border border-[color:var(--border)] px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--text)] transition hover:border-[color:var(--accent)]"
+            href="/resume.pdf"
+            download="Mustak-Sahariar-Miraj-Resume.pdf"
           >
             Download Resume
           </a>
@@ -30,11 +31,11 @@ export default function Contact() {
         {[
           {
             label: "Location",
-            value: "Remote",
+            value: "Dhaka, Bangladesh",
           },
           {
             label: "Focus",
-            value: "Full-stack, Backend, Cloud",
+            value: "Backend, Cloud, Full-stack",
           },
           {
             label: "Availability",

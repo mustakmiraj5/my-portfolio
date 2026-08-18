@@ -17,6 +17,12 @@ export default function Header() {
           </a>
           <a
             className="transition hover:text-[color:var(--text)]"
+            href="#experience"
+          >
+            Experience
+          </a>
+          <a
+            className="transition hover:text-[color:var(--text)]"
             href="#projects"
           >
             Projects

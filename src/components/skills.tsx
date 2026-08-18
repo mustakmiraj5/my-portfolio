@@ -1,19 +1,42 @@
 const skillGroups = [
   {
-    title: "Frontend",
-    items: ["TypeScript", "Next.js", "React"],
-  },
-  {
-    title: "Backend",
-    items: ["NestJS", "Prisma", "PostgreSQL", "MongoDB", "MySQL"],
-  },
-  {
-    title: "Cloud & DevOps",
-    items: ["Docker", "AWS EC2", "AWS RDS", "CloudFormation"],
-  },
-  {
     title: "Languages",
-    items: ["TypeScript", "Python", "SQL", "Bash", "JavaScript"],
+    items: ["JavaScript", "TypeScript", "Python", "SQL"],
+  },
+  {
+    title: "Back-End",
+    items: [
+      "Node.js",
+      "NestJS",
+      "REST API design",
+      "Prisma",
+      "MySQL",
+      "MongoDB",
+      "Redis",
+      "Winston",
+    ],
+  },
+  {
+    title: "Front-End",
+    items: ["React.js", "Next.js", "TailwindCSS", "Recharts", "Zustand"],
+  },
+  {
+    title: "Cloud & Tools",
+    items: [
+      "AWS EC2",
+      "S3",
+      "RDS",
+      "SQS",
+      "ALB",
+      "CloudFormation",
+      "BullMQ",
+      "nginx",
+      "PM2",
+      "Docker",
+      "Ubuntu",
+      "Git",
+      "Jest",
+    ],
   },
 ];
 
@@ -25,7 +48,7 @@ export default function Skills() {
           Skills
         </p>
         <h2 className="mt-2 text-3xl font-semibold text-[color:var(--text)]">
-          Balanced across design and engineering
+          Balanced across product and infrastructure
         </h2>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

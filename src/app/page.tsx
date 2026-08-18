@@ -1,9 +1,11 @@
 import Header from "@/components/header";
 import Hero from "@/components/hero";
 import About from "@/components/about";
+import Experience from "@/components/experience";
 import Projects from "@/components/projects";
 import Skills from "@/components/skills";
 import Blogs from "@/components/blogs";
+import Education from "@/components/education";
 import Contact from "@/components/contact";
 import Footer from "@/components/footer";
 import { fetchMediumPosts } from "@/lib/medium";
@@ -20,9 +22,11 @@ export default async function Home() {
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-6 py-16">
         <Hero />
         <About />
+        <Experience />
         <Projects />
         <Skills />
         <Blogs posts={posts} />
+        <Education />
         <Contact />
       </main>
 

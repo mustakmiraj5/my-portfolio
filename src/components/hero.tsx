@@ -5,16 +5,17 @@ export default function Hero() {
     <section id="hero" className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="flex flex-col gap-6">
         <span className="w-fit rounded-full border border-[color:var(--border)] bg-[color:var(--bg-elevated)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--muted)]">
-          Open to full-stack opportunities
+          Software Engineer · Dhaka, Bangladesh
         </span>
         <h1 className="text-4xl font-semibold leading-tight text-[color:var(--text)] sm:text-5xl">
-          I build reliable, scalable web applications with TypeScript and
-          modern backend architecture.
+          I build and operate AWS-hosted SaaS with TypeScript, NestJS,
+          and MySQL.
         </h1>
         <p className="text-lg leading-8 text-[color:var(--muted)]">
-          Full-stack developer working with Next.js, NestJS, Prisma, and
-          modern databases. I care about performance, maintainability, and
-          clear system design—from API contracts to infrastructure.
+          Nearly 2 years building production backends. Currently delivering a
+          Japanese-language reservation platform for an overseas engineering
+          team across timezones—REST API design, async job pipelines, and
+          Linux/nginx production infrastructure.
         </p>
         <div className="flex flex-wrap items-center gap-4">
           <a
@@ -37,6 +38,7 @@ export default function Hero() {
               href={item.href}
               target="_blank"
               rel="noreferrer"
+              aria-label={item.label}
               className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border)] px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] transition hover:border-[color:var(--accent)] hover:text-[color:var(--text)]"
             >
               {item.icon}
@@ -51,9 +53,9 @@ export default function Hero() {
             Current Focus
           </p>
           <p className="mt-4 text-2xl font-semibold text-[color:var(--text)]">
-            Problem Solving,<br />
-            Design Patterns & Refactoring,<br />
-            Performance Optimization,<br />
+            REST API Design,<br />
+            Async Job Pipelines,<br />
+            Production Infrastructure,<br />
             System Design & Architecture.
           </p>
         </div>

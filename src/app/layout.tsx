@@ -14,7 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Mustak Sahariar Miraj | Portfolio",
-  description: "Welcome to my portfolio! I'm Mustak Sahariar Miraj, a passionate software developer with expertise in web development, machine learning, and data science. Explore my projects, skills, and experience to see how I can contribute to your next big idea.",
+  description:
+    "Mustak Sahariar Miraj — Software Engineer in Dhaka, Bangladesh, building and operating AWS-hosted SaaS with TypeScript, NestJS, MySQL and React. Explore my experience, projects, and skills.",
 };
 
 export default function RootLayout({

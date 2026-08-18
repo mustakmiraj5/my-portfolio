@@ -21,7 +21,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     label: "LinkedIn",
-    href: "https://www.linkedin.com/in/mustakmiraj005/",
+    href: "https://www.linkedin.com/in/mustak-sahariar-miraj/",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
         <path
